@@ -1,0 +1,6 @@
+# Cloudflare Pages 가 읽는 헤더 설정이다. 이 파일 자체는 올라가도 공개되지 않는다. docs/배포.md 참고.
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

@@ -1,45 +1,79 @@
-# 기한지기
+# Gihanjigi (기한지기)
 
-사기 피해를 입은 사람이 지금 할 일, 법정 기한, 제출할 증거를 정리하는 웹 시제품이다. 2026 신한 스퀘어브릿지
-대학생 창업 공모전(HERO IR)에 낼 서비스를 실제로 눌러 볼 수 있게 만든 것이다.
+English | [简体中文](README.zh-CN.md)
 
-설명 문서: [`docs/시제품-설명.md`](docs/시제품-설명.md)
+Gihanjigi is a web prototype for people in Korea who have just lost money to fraud. It lays out what to do right
+now, which statutory deadlines apply, and which evidence to hand to the bank and the police. The interface is in
+Korean, and the procedures and deadlines follow Korean law.
 
-## 실행
+> Gihanjigi is not legal advice. It shows the general procedure for the conditions the user picks, cites the
+> article each step relies on, and marks anything the law alone cannot settle as "needs checking" instead of
+> guessing a date. The rules have not yet been reviewed by a lawyer.
 
-Node 24.10.0 을 쓴다. 화면과 계산 엔진은 의존성이 없다.
+## What it does
+
+| Screen | What it does |
+|---|---|
+| Fraud type | A few questions (why the money was sent, how, whether the other party is a relative) sort the case into voice phishing, trade fraud, or a type not yet covered, with the articles behind the decision. Two sample cases can be loaded |
+| To do now | Steps for that type in the order they should happen right after the loss, each with its computed deadline where one applies |
+| Deadlines | Enter the dates from the notices received and the statutory deadlines are computed. Each one shows the calculation, notes and the cited article, and upcoming deadlines can be downloaded as a calendar file (.ics) |
+| Case record | Reads KakaoTalk chat exports (phone, PC and Mac formats) and bank transaction CSVs into a timeline. Lines that show an amount or an account number are flagged for the user to confirm or correct. The whole case can be saved to and restored from a file |
+| Progress | Shows where the bank refund procedure and the criminal investigation stand, based on the dates entered |
+| Evidence list | Builds separate lists for the bank and for the police from confirmed records only, ready to print or copy |
+
+Every deadline rule cites its article, with a link to the Korean National Law Information Center. On 2026-10-09 the
+cited articles were checked against the official text: the version in force, or for the repealed Prosecutors' Office
+Act, its last version before repeal.
+
+## Privacy
+
+Case records stay in the browser's localStorage on the user's device. Nothing is sent to a server, and there are
+no analytics. The page's Content Security Policy (`connect-src 'none'`, `form-action 'none'`) makes the browser
+block any outbound request. All sample data is made up.
+
+## Run
+
+Use Node 24.10.0. The app and the rule engine have no dependencies.
 
     npm start                 # http://127.0.0.1:4310/
-    # http://127.0.0.1:4310/?today=2026-10-09   기준일을 고정해서 볼 때
+    # http://127.0.0.1:4310/?today=2026-10-09   pins the reference date
 
-## 검사
+## Test
 
     npm ci
-    npm test                  # 엔진 검사 69건 (node:test)
-    npm run check:browser     # 휴대폰 320px, 390px, PC 1280px 흐름 점검과 axe
-    npm run verify            # 둘 다
+    npm test                  # 69 engine tests (node:test)
+    npm run check:browser     # flow checks and axe at 320px, 390px and 1280px
+    npm run verify            # both
 
-화면 점검은 `playwright-core` 와 `axe-core` 를 쓰고 브라우저는 따로 받지 않는다. 크로미움이나 크롬의 위치를
-`CHROMIUM` 환경 변수로 넘긴다. GitHub Actions 는 러너에 깔린 구글 크롬을 쓴다.
+The browser check uses `playwright-core` and `axe-core` and does not download a browser. Pass the path to Chromium or
+Chrome in the `CHROMIUM` environment variable. GitHub Actions uses the Google Chrome installed on the runner.
 
-## 구조
+## Deploy
 
-    src/engine/   계산 규칙. 브라우저와 Node 에서 그대로 돈다.
-      holidays.mjs   2026~2027년 공휴일(음력 날짜는 추정 표시)과 은행 휴무일
-      dates.mjs      기간 계산(첫날 빼기, 월 단위, 말일 넘기기, 영업일)
-      law.mjs        근거 조문, 요지, 원문 대조 여부, 국가법령정보센터 주소
-      classify.mjs   유형 확인 질문과 규칙
-      deadlines.mjs  기한 규칙 11개
-      checklist.mjs  유형별 지금 할 일
-      stages.mjs     은행 피해구제와 수사 단계
-      evidence.mjs   카카오톡 대화와 은행 거래내역 읽기, 증거 목록
-      ics.mjs        달력 파일(.ics)
-      case.mjs       사건 저장과 불러오기
-    src/ui/       화면. 엔진을 불러 쓰는 바닐라 자바스크립트
-    test/         엔진 검사
-    scripts/      정적 서버와 화면 점검
-    docs/         설명 문서
+`src/` is uploaded as is to Cloudflare Pages, and `src/_headers` adds the security headers. A deploy happens only
+when someone runs the `deploy` workflow by hand on `main` in GitHub Actions. The one-time setup and the required
+secrets are described in [`docs/배포.md`](docs/배포.md) (Korean).
 
-## 지켜야 할 것
+## Layout
 
-`CLAUDE.md` 에 적었다. 사건 기록은 이용자 기기 밖으로 보내지 않고, 배포와 유료 API 는 건마다 승인을 받는다.
+    src/engine/   Rule engine. Runs unchanged in the browser and in Node.
+      holidays.mjs   Public holidays for 2026 and 2027 (estimated lunar dates are marked) and bank holidays
+      dates.mjs      Period arithmetic (first day excluded, month periods, end of month, business days)
+      law.mjs        Cited articles, summaries, check status and links to the National Law Information Center
+      classify.mjs   Fraud type questions and rules
+      deadlines.mjs  11 deadline rules
+      checklist.mjs  What to do now, by fraud type
+      stages.mjs     Bank refund and investigation stages
+      evidence.mjs   KakaoTalk and bank statement parsing, evidence lists
+      ics.mjs        Calendar files (.ics)
+      case.mjs       Saving and loading a case
+    src/ui/       Screens in plain JavaScript on top of the engine
+    src/_headers  Security headers for Cloudflare Pages
+    test/         Engine tests
+    scripts/      Static server and browser check
+    docs/         Design notes and deployment guide (Korean)
+
+## Project rules
+
+Working rules are in [`CLAUDE.md`](CLAUDE.md) (Korean). In short: case records never leave the user's device, and
+every deployment or paid API call needs explicit approval.
