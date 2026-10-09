@@ -25,6 +25,15 @@ test("2026년 10월 5일은 개천절 대체공휴일이다", () => {
   assert.equal(isBusinessDay("2026-10-06"), true);
 });
 
+test("2026년 개정으로 노동절과 제헌절이 공휴일이고, 주말과 겹치면 대체공휴일이 생긴다", () => {
+  assert.equal(isOffForCriminalPeriod("2026-05-01"), true);
+  assert.equal(isOffForCriminalPeriod("2026-07-17"), true);
+  assert.equal(isBusinessDay("2026-07-17"), false);
+  assert.equal(isOffForCriminalPeriod("2027-05-03"), true); // 노동절이 토요일
+  assert.equal(isOffForCriminalPeriod("2027-07-19"), true); // 제헌절이 토요일
+  assert.equal(rollForward("2027-07-17").end, "2027-07-20");
+});
+
 test("공휴일 자료에 같은 날짜가 두 번 들어 있지 않다", () => {
   const 날짜들 = 공휴일.map((h) => h.date);
   assert.equal(new Set(날짜들).size, 날짜들.length);
@@ -61,7 +70,7 @@ test("3영업일은 신청한 날을 빼고 주말과 공휴일을 건너뛴다"
   assert.equal(r.end, "2026-10-08");
   assert.match(r.steps[0], /2026\.10\.6\(화\), 2026\.10\.7\(수\), 2026\.10\.8\(목\)/);
   assert.equal(addBusinessDays("2026-09-23", 3).end, "2026-09-30"); // 추석 연휴
-  assert.equal(addBusinessDays("2026-04-29", 3).end, "2026-05-06"); // 근로자의 날 은행 휴무, 어린이날
+  assert.equal(addBusinessDays("2026-04-29", 3).end, "2026-05-06"); // 노동절, 어린이날
 });
 
 test("추정 공휴일이 걸리거나 자료 범위를 벗어나면 밝힌다", () => {

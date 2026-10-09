@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { 질문, 유형확인 } from "../src/engine/classify.mjs";
 import { 할일목록 } from "../src/engine/checklist.mjs";
 import { 은행단계, 수사단계 } from "../src/engine/stages.mjs";
-import { 새사건, 불러오기, 저장하기, 풀이, 판 } from "../src/engine/case.mjs";
+import { 새사건, 불러오기, 저장하기, 풀이, 판, 사건파일, 사건파일읽기 } from "../src/engine/case.mjs";
 import { 조문 } from "../src/engine/law.mjs";
 
 test("물건값으로 보낸 돈은 거래사기이고 지급정지 대상이 아니다", () => {
@@ -45,6 +45,7 @@ test("할 일은 유형마다 다르고, 친족이면 고소 기간 항목이 �
   assert.equal(계좌[0].id, "지급정지");
   const 현금 = 할일목록(유형확인({ 까닭: "요구", 방법: "현금" }));
   assert.ok(!현금.some((x) => x.id === "지급정지"));
+  assert.match(할일목록(유형확인({ 까닭: "물건", 방법: "간편" }), { 친족: "모름" }).find((x) => x.id === "친족고소").설명, /먼저 확인/);
   const 거래 = 할일목록(유형확인({ 까닭: "물건", 방법: "간편" }), { 친족: "예" });
   assert.ok(거래.some((x) => x.id === "친족고소"));
   assert.equal(거래.at(-1).id, "회복사기");
@@ -91,6 +92,16 @@ test("사건을 저장했다가 다시 읽으면 같다", () => {
   const r = 불러오기(저장하기(s), "2026-10-10");
   assert.equal(r.문제, null);
   assert.deepEqual(r.사건, s);
+});
+
+test("사건 파일로 내보냈다가 다시 읽으면 같고, 다른 파일은 받지 않는다", () => {
+  const s = { ...새사건("2026-10-09"), 이름: "백업", 답: { 까닭: "대출", 방법: "계좌" }, 날짜: { 구술신청일: "2026-10-08" } };
+  const r = 사건파일읽기(사건파일(s), "2026-10-10");
+  assert.equal(r.문제, null);
+  assert.deepEqual(r.사건, s);
+  assert.match(사건파일읽기("{}", "2026-10-10").문제, /사건 파일이 아닙니다/);
+  assert.match(사건파일읽기("not json", "2026-10-10").문제, /읽지 못했습니다/);
+  assert.equal(사건파일읽기("[]", "2026-10-10").사건, null);
 });
 
 test("망가진 저장 값과 모르는 값은 버린다", () => {

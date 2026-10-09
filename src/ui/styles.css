@@ -56,7 +56,8 @@ h1:focus, main:focus { outline: none; }
 }
 
 /* 화면 목록 */
-.nav { display: flex; gap: 0 18px; border-bottom: 1px solid var(--line); }
+.nav { display: flex; flex-wrap: wrap; gap: 0 18px; border-bottom: 1px solid var(--line); }
+@media (max-width: 359px) { .nav { gap: 0 14px; } }
 .nav a { display: inline-flex; align-items: center; min-height: 48px; color: var(--ink-2); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
 .nav a[aria-current="page"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--ink); }
 .nav .long { display: none; }
@@ -196,6 +197,7 @@ summary { cursor: pointer; padding: 6px 0; color: var(--ink-2); font-size: 15px;
 .filter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 16px; margin-top: 8px; }
 .filter p { margin: 0; }
 .rec { display: grid; gap: 2px; }
+.rec:focus { outline: 2px solid var(--ink); outline-offset: 4px; }
 .rec p { margin: 0; }
 .rec-time { color: var(--ink-2); font-size: 15px; font-variant-numeric: tabular-nums; }
 .rec-kind { color: var(--ink-2); font-size: 15px; }

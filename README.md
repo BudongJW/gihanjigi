@@ -15,8 +15,8 @@ Node 24.10.0 을 쓴다. 화면과 계산 엔진은 의존성이 없다.
 ## 검사
 
     npm ci
-    npm test                  # 엔진 검사 61건 (node:test)
-    npm run check:browser     # 휴대폰 390px, PC 1280px 흐름 점검과 axe
+    npm test                  # 엔진 검사 69건 (node:test)
+    npm run check:browser     # 휴대폰 320px, 390px, PC 1280px 흐름 점검과 axe
     npm run verify            # 둘 다
 
 화면 점검은 `playwright-core` 와 `axe-core` 를 쓰고 브라우저는 따로 받지 않는다. 크로미움이나 크롬의 위치를

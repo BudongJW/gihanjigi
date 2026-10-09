@@ -5,9 +5,9 @@ import { 예시사건 } from "./sample.mjs";
 import { 질문 } from "../engine/classify.mjs";
 import { 날짜항목 } from "../engine/deadlines.mjs";
 import { 조문 } from "../engine/law.mjs";
-import { 새사건, 불러오기, 저장하기, 풀이, 저장열쇠 } from "../engine/case.mjs";
+import { 새사건, 불러오기, 저장하기, 풀이, 저장열쇠, 사건파일, 사건파일읽기 } from "../engine/case.mjs";
 import { 일정파일 } from "../engine/ics.mjs";
-import { 카톡읽기, 거래내역읽기, 대화를기록으로, 거래를기록으로, 직접기록, 시간순, 증거목록 } from "../engine/evidence.mjs";
+import { 카톡읽기, 거래내역읽기, 대화를기록으로, 거래를기록으로, 직접기록, 시간순, 증거목록, 글종류 } from "../engine/evidence.mjs";
 import { isIso, 한글날짜 } from "../engine/dates.mjs";
 
 // ?today=2026-10-09 로 기준일을 고정할 수 있다. 화면 점검과 캡처에 쓴다.
@@ -22,6 +22,9 @@ let 사건 = 새사건(오늘);
 let 안내 = null;
 let 고치는기록 = null;
 let 확인만보기 = false;
+/** 기록이 많으면 앞의 일부만 그린다. 대화 파일 하나에 수천 줄이 있을 수 있다. */
+const 한번에 = 150;
+let 보일개수 = 한번에;
 let 증거용도 = null;
 let 넘길안내 = null;
 
@@ -42,8 +45,10 @@ function 읽어오기() {
 function 저장() {
   try {
     localStorage.setItem(저장열쇠, 저장하기(사건));
-  } catch {
-    안내 = "이 브라우저에서는 기록을 저장할 수 없어, 창을 닫으면 기록이 사라집니다.";
+  } catch (e) {
+    안내 = e?.name === "QuotaExceededError"
+      ? "기록이 너무 많아 이 기기에 저장하지 못했습니다. 사건 기록 화면에서 사건 파일을 내려받아 보관하고, 필요 없는 대화 기록을 지워 주십시오."
+      : "이 브라우저에서는 기록을 저장할 수 없어, 창을 닫으면 기록이 사라집니다.";
   }
 }
 
@@ -312,7 +317,7 @@ function 기한줄(k) {
 function 달력내려받기() {
   const p = 풀이(사건, 오늘);
   const r = 일정파일(p.기한, { 오늘, 만든시각: new Date(), 사건이름: 사건.이름 });
-  내려받기("기한지기-기한.ics", r.내용, "text/calendar;charset=utf-8");
+  내려받기(`gihanjigi-deadlines-${오늘}.ics`, r.내용, "text/calendar;charset=utf-8");
 }
 
 function 기한결과내용(p) {
@@ -379,8 +384,6 @@ function 기록더하기(새것) {
   return { 더함: 남김.length, 겹친: 새것.length - 남김.length };
 }
 
-const 거래내역같음 = (이름, 글) => /\.(csv|tsv)$/i.test(이름) || /거래일|출금/.test(글.split(/\r?\n/).slice(0, 5).join(" "));
-
 function 읽은결과(이름, r, 확인) {
   const 겹친 = r.겹친 ? ` 이미 있는 ${r.겹친}건은 뺐습니다.` : "";
   return `${이름}: ${r.더함}건을 가져왔습니다.${확인 ? ` 금액이나 계좌가 보이는 ${확인}건은 확인 필요로 두었습니다.` : ""}${겹친}`;
@@ -397,7 +400,7 @@ async function 파일가져오기(e) {
       continue;
     }
     const 글 = await 글로읽기(f);
-    if (거래내역같음(f.name, 글)) {
+    if (글종류(글, f.name) === "거래내역") {
       const { 거래, 못읽음 } = 거래내역읽기(글);
       if (못읽음) { 결과들.push(`${f.name}: ${못읽음}`); continue; }
       const 기록 = 거래를기록으로(거래, f.name);
@@ -473,7 +476,7 @@ function 고치기양식(r) {
 
 function 기록줄(r) {
   const 확인 = r.상태 === "확인 필요";
-  return h("li", { class: `rec${확인 ? " check" : ""}`, id: `rec-${r.id}` },
+  return h("li", { class: `rec${확인 ? " check" : ""}`, id: `rec-${r.id}`, tabindex: -1 },
     h("p", { class: "rec-time" }, 일시말(r.일시)),
     h("div", null,
       h("p", { class: "rec-kind" }, r.종류, r.보낸이 ? `, ${r.보낸이}` : null),
@@ -482,9 +485,41 @@ function 기록줄(r) {
       h("p", { class: "rec-src" }, `출처 ${r.출처}`),
       고치는기록 === r.id ? 고치기양식(r) : h("div", { class: "rec-actions" },
         확인 ? h("span", { class: "flag-text" }, "확인 필요") : h("span", { class: "muted" }, "확정함"),
-        확인 ? h("button", { type: "button", class: "btn small", id: `ok-${r.id}`, onclick: () => 바꾸기((s) => { s.기록 = s.기록.map((x) => (x.id === r.id ? { ...x, 상태: "확정" } : x)); }) }, "확정") : null,
+        확인 ? h("button", { type: "button", class: "btn small", id: `ok-${r.id}`, onclick: () => 확정하기(r.id) }, "확정") : null,
         h("button", { type: "button", class: "link-btn", id: `fix-${r.id}`, onclick: () => { 고치는기록 = r.id; 그리기(); document.getElementById(`e-text-${r.id}`)?.focus(); } }, "고치기"),
         h("button", { type: "button", class: "link-btn", onclick: () => { if (window.confirm("이 기록을 지웁니다.")) 바꾸기((s) => { s.기록 = s.기록.filter((x) => x.id !== r.id); }); } }, "지우기"))));
+}
+
+/** 확정한 뒤에는 다음 확인 필요 기록의 확정 단추로 초점을 옮긴다. 키보드로 이어서 확정할 수 있다. */
+function 확정하기(id) {
+  const 차례 = 시간순(사건.기록).filter((x) => x.상태 === "확인 필요").map((x) => x.id);
+  const 다음 = 차례[차례.indexOf(id) + 1] ?? null;
+  바꾸기((s) => { s.기록 = s.기록.map((x) => (x.id === id ? { ...x, 상태: "확정" } : x)); });
+  (document.getElementById(다음 ? `ok-${다음}` : `rec-${id}`) ?? document.getElementById(`rec-${id}`))?.focus();
+}
+
+function 사건파일내려받기() {
+  // 파일 이름은 영문으로 둔다. 한글 이름은 브라우저에 따라 「download」로 바뀌어 확장자가 사라진다.
+  내려받기(`gihanjigi-case-${오늘}.json`, 사건파일(사건), "application/json");
+}
+
+async function 사건파일불러오기(e) {
+  const 파일 = e.target.files?.[0];
+  if (!파일) return;
+  const r = 사건파일읽기(await 글로읽기(파일), 오늘);
+  if (!r.사건) {
+    안내 = r.문제;
+  } else {
+    const 있음 = 사건.기록.length || Object.keys(사건.날짜).length || 사건.답.까닭;
+    if (있음 && !window.confirm("지금 사건을 이 파일의 사건으로 바꿉니다.")) {
+      e.target.value = ""; // 같은 파일을 다시 골라도 change 가 나도록 비운다
+      return;
+    }
+    사건 = r.사건;
+    저장();
+    안내 = `사건 파일을 불러왔습니다. 기록 ${사건.기록.length}건, 날짜 ${Object.keys(사건.날짜).length}개가 들어 있습니다.`;
+  }
+  그리기();
 }
 
 /** 대화 파일에서 피해자 본인을 가리키는 이름. 증거 목록의 상대방에서 뺀다. */
@@ -500,7 +535,8 @@ function 내이름칸() {
 function 기록화면() {
   const 기록 = 시간순(사건.기록);
   const 확인수 = 기록.filter((r) => r.상태 === "확인 필요").length;
-  const 보일것 = 확인만보기 && 확인수 ? 기록.filter((r) => r.상태 === "확인 필요") : 기록;
+  const 고른것 = 확인만보기 && 확인수 ? 기록.filter((r) => r.상태 === "확인 필요") : 기록;
+  const 보일것 = 고른것.slice(0, 보일개수);
   return [
     제목("사건 기록"),
     안내줄(),
@@ -531,7 +567,16 @@ function 기록화면() {
       확인수 ? h("div", { class: "filter" },
         h("p", { class: "flag-text" }, `확인이 필요한 기록 ${확인수}건`),
         h("label", { class: "check-label" }, h("input", { type: "checkbox", id: "only-check", checked: 확인만보기, onchange: (e) => { 확인만보기 = e.target.checked; 그리기(); } }), "확인이 필요한 기록만 보기")) : null,
-      기록.length ? h("ol", { class: "rows records" }, 보일것.map(기록줄)) : h("p", { class: "muted" }, "아직 기록이 없습니다.")),
+      기록.length ? h("ol", { class: "rows records" }, 보일것.map(기록줄)) : h("p", { class: "muted" }, "아직 기록이 없습니다."),
+      고른것.length > 보일것.length ? h("div", { class: "actions" },
+        h("button", { type: "button", class: "btn", id: "show-all", onclick: () => { 보일개수 = Infinity; 그리기(); } }, `나머지 ${고른것.length - 보일것.length}건 더 보기`)) : null),
+    h("section", null,
+      h("h2", null, "사건 파일"),
+      h("p", null, "다른 기기로 옮기거나 따로 보관할 때 씁니다. 답, 날짜, 기록이 모두 들어 있고 대화와 계좌번호도 그대로 담기니 안전한 곳에 둡니다."),
+      h("div", { class: "actions" },
+        h("button", { type: "button", class: "btn", onclick: 사건파일내려받기 }, "사건 파일 내려받기"),
+        h("input", { type: "file", id: "case-file", class: "file-input", accept: ".json,application/json", onchange: 사건파일불러오기 }),
+        h("label", { for: "case-file", class: "btn" }, "사건 파일 불러오기"))),
   ];
 }
 
@@ -689,7 +734,7 @@ function 시작() {
     사건 = 새사건(오늘);
     이동("#/type", "이 기기에 저장한 기록을 모두 지웠습니다.");
   });
-  window.addEventListener("hashchange", () => { 안내 = 넘길안내; 넘길안내 = null; 고치는기록 = null; 그리기({ 옮김: true }); });
+  window.addEventListener("hashchange", () => { 안내 = 넘길안내; 넘길안내 = null; 고치는기록 = null; 보일개수 = 한번에; 그리기({ 옮김: true }); });
   그리기();
 }
 

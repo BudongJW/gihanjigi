@@ -6,6 +6,8 @@
 <title>기한지기</title>
 <meta name="description" content="사기 피해 직후 할 일과 법정 기한을 정리하는 시제품">
 <meta name="robots" content="noindex">
+<!-- 사건 기록을 기기 밖으로 보내지 않는다는 약속을 브라우저가 지키게 한다. 외부 요청(connect-src)과 양식 전송을 모두 막는다. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="ui/styles.css">
 <script type="module" src="ui/app.mjs"></script>
@@ -28,7 +30,7 @@
 <footer class="wrap foot">
   <p>기한지기 시제품입니다. 화면의 내용은 일반 절차 안내이며 개별 사건에 대한 법률 판단이 아닙니다. 기관이 보낸 통지서의 날짜가 이 화면과 다르면 통지서를 따릅니다.</p>
   <p>상담 전화: 경찰 112, 금융감독원 1332, 대한법률구조공단 132</p>
-  <p>기록은 이 기기의 브라우저에만 저장되고 어디로도 보내지 않습니다. <button type="button" class="link-btn" id="wipe">이 기기에서 기록 지우기</button></p>
+  <p>기록은 이 기기의 브라우저에만 저장되고 어디로도 보내지 않습니다. 다른 기기로 옮기려면 사건 기록 화면에서 사건 파일을 내려받습니다. <button type="button" class="link-btn" id="wipe">이 기기에서 기록 지우기</button></p>
 </footer>
 </body>
 </html>

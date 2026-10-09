@@ -55,6 +55,21 @@ export function 불러오기(글, 오늘) {
 
 export const 저장하기 = (사건) => JSON.stringify(사건);
 
+/** 사건 파일(백업)로 내보낼 글. 사람이 열어 볼 수 있게 들여 쓴다. */
+export const 사건파일 = (사건) => `${JSON.stringify(사건, null, 2)}\n`;
+
+/**
+ * 이용자가 고른 사건 파일을 읽는다. 기한지기 사건 파일이 아니면 읽지 않는다.
+ * @returns {{ 사건: ReturnType<typeof 새사건> | null, 문제: string | null }}
+ */
+export function 사건파일읽기(글, 오늘) {
+  let 원본;
+  try { 원본 = JSON.parse(글); } catch { return { 사건: null, 문제: "사건 파일을 읽지 못했습니다. 기한지기에서 내려받은 파일인지 확인해 주십시오." }; }
+  if (!원본 || typeof 원본 !== "object" || typeof 원본.판 !== "number") return { 사건: null, 문제: "기한지기 사건 파일이 아닙니다." };
+  const r = 불러오기(글, 오늘);
+  return r.문제 ? { 사건: null, 문제: r.문제 } : r;
+}
+
 /** 사건에서 화면에 필요한 것을 모두 계산한다. */
 export function 풀이(사건, 오늘) {
   const 유형 = 유형확인(사건.답);

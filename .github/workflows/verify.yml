@@ -27,6 +27,9 @@ jobs:
           cache: npm
       - name: 설치
         run: npm ci
+      # 러너에는 한글 글꼴이 없다. 글자 폭이 실제와 달라지면 가로 넘침 검사가 엉뚱하게 나온다.
+      - name: 한글 글꼴
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       # 러너에 깔려 있는 구글 크롬을 쓴다. playwright-core 는 브라우저를 따로 받지 않는다.
       - name: 검사
         env:
