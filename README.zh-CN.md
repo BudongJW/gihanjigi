@@ -33,7 +33,7 @@ Gihanjigi 是一个网页原型，面向在韩国刚刚遭遇诈骗、蒙受资�
 ## 测试
 
     npm ci
-    npm test                  # 69 项引擎测试（node:test）
+    npm test                  # 71 项引擎测试（node:test）
     npm run check:browser     # 在 320px、390px 和 1280px 下检查流程并运行 axe
     npm run verify            # 两者都运行
 
@@ -46,7 +46,7 @@ Gihanjigi 是一个网页原型，面向在韩国刚刚遭遇诈骗、蒙受资�
 ## 目录结构
 
     src/engine/   规则引擎。可在浏览器和 Node 中原样运行。
-      holidays.mjs   2026 年和 2027 年的公休日（推算的农历日期会标注）以及银行休息日
+      holidays.mjs   2026 年和 2027 年的公休日（已与官方历书核对）以及银行休息日
       dates.mjs      期间计算（不算首日、按月计算、月末顺延、营业日）
       law.mjs        引用条文、要旨、核对状态以及国家法令信息中心链接
       classify.mjs   诈骗类型的问题和规则

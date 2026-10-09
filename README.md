@@ -41,7 +41,7 @@ Use Node 24.10.0. The app and the rule engine have no dependencies.
 ## Test
 
     npm ci
-    npm test                  # 69 engine tests (node:test)
+    npm test                  # 71 engine tests (node:test)
     npm run check:browser     # flow checks and axe at 320px, 390px and 1280px
     npm run verify            # both
 
@@ -57,7 +57,7 @@ secrets are described in [`docs/배포.md`](docs/배포.md) (Korean).
 ## Layout
 
     src/engine/   Rule engine. Runs unchanged in the browser and in Node.
-      holidays.mjs   Public holidays for 2026 and 2027 (estimated lunar dates are marked) and bank holidays
+      holidays.mjs   Public holidays for 2026 and 2027 (checked against the official calendar) and bank holidays
       dates.mjs      Period arithmetic (first day excluded, month periods, end of month, business days)
       law.mjs        Cited articles, summaries, check status and links to the National Law Information Center
       classify.mjs   Fraud type questions and rules
