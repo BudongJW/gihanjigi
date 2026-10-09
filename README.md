@@ -1,25 +1,26 @@
-# 기한지기 시제품
+# 기한지기
 
 사기 피해를 입은 사람이 지금 할 일, 법정 기한, 제출할 증거를 정리하는 웹 시제품이다. 2026 신한 스퀘어브릿지
-대학생 창업 공모전(HERO IR)에 낼 서비스를 실제로 눌러 볼 수 있게 만든 것이다. 살핀(Salpin) 제품과는 별개다.
+대학생 창업 공모전(HERO IR)에 낼 서비스를 실제로 눌러 볼 수 있게 만든 것이다.
 
-설명 문서: `docs/strategy/2026-10-09-기한지기-시제품.md`
+설명 문서: [`docs/시제품-설명.md`](docs/시제품-설명.md)
 
 ## 실행
 
-의존성이 없다. 정적 파일 서버로 `src/` 를 열면 된다.
+Node 24.10.0 을 쓴다. 화면과 계산 엔진은 의존성이 없다.
 
-    npm start            # python3 -m http.server 4310 --directory src
-    # http://127.0.0.1:4310/          오늘 날짜 기준
-    # http://127.0.0.1:4310/?today=2026-10-09   기준일 고정
+    npm start                 # http://127.0.0.1:4310/
+    # http://127.0.0.1:4310/?today=2026-10-09   기준일을 고정해서 볼 때
 
 ## 검사
 
-    npm test                          # 엔진 검사 61건 (node:test)
-    node scripts/browser-check.mjs    # 휴대폰 390px, PC 1280px 흐름 점검과 axe
+    npm ci
+    npm test                  # 엔진 검사 61건 (node:test)
+    npm run check:browser     # 휴대폰 390px, PC 1280px 흐름 점검과 axe
+    npm run verify            # 둘 다
 
-`browser-check.mjs` 는 저장소 루트의 `playwright-core` 와 `axe-core` 를 빌려 쓴다. 저장소 루트에서
-`npm ci` 를 한 뒤에 돌린다. 크로미움 위치는 `CHROMIUM` 환경 변수로 바꿀 수 있다.
+화면 점검은 `playwright-core` 와 `axe-core` 를 쓰고 브라우저는 따로 받지 않는다. 크로미움이나 크롬의 위치를
+`CHROMIUM` 환경 변수로 넘긴다. GitHub Actions 는 러너에 깔린 구글 크롬을 쓴다.
 
 ## 구조
 
@@ -36,11 +37,9 @@
       case.mjs       사건 저장과 불러오기
     src/ui/       화면. 엔진을 불러 쓰는 바닐라 자바스크립트
     test/         엔진 검사
-    scripts/      화면 점검
+    scripts/      정적 서버와 화면 점검
+    docs/         설명 문서
 
 ## 지켜야 할 것
 
-- 사건 기록은 이 기기의 브라우저(localStorage, 열쇠 `gihanjigi.v1`)에만 둔다. 서버로 보내는 코드를 넣지 않는다.
-- 사진 속 글자 읽기(AI)는 연결하지 않았다. 유료 API 를 붙이려면 의뢰인 승인이 먼저다.
-- 배포하기 전에 별도 저장소로 옮긴다. 이 저장소는 살핀 제품의 저장소다.
-- 화면 문구는 「~습니다」체로 쓰고, 엠대시와 가운뎃점을 쓰지 않는다.
+`CLAUDE.md` 에 적었다. 사건 기록은 이용자 기기 밖으로 보내지 않고, 배포와 유료 API 는 건마다 승인을 받는다.

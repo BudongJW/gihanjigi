@@ -1,35 +1,18 @@
 // 화면 점검. 휴대폰과 PC 크기에서 실제 흐름을 눌러 보고, 가로 넘침, 누르는 자리 크기, axe(WCAG 2.2 AA)를 본다.
-// 시제품은 의존성이 없어서, 브라우저 도구는 저장소 루트의 playwright-core 와 axe-core 를 빌려 쓴다.
-//   node scripts/browser-check.mjs [캡처를 남길 폴더]
-// 크로미움 위치는 CHROMIUM 환경 변수로 바꿀 수 있다.
-import { createServer } from "node:http";
+//   npm run check:browser [-- 캡처를 남길 폴더]
+// 크로미움 위치는 CHROMIUM 환경 변수로 바꿀 수 있다. 기본값은 이 개발 환경에 미리 깔린 크로미움이다.
 import { createRequire } from "node:module";
 import { readFile, mkdir } from "node:fs/promises";
-import { extname, join, normalize, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { 서버열기 } from "./serve.mjs";
 
-const 여기 = dirname(fileURLToPath(import.meta.url));
-const 뿌리 = join(여기, "..", "src");
-const 저장소 = join(여기, "..", "..", "..");
-const load = createRequire(join(저장소, "package.json"));
+const load = createRequire(import.meta.url);
 const { chromium } = load("playwright-core");
 const axe경로 = load.resolve("axe-core/axe.min.js");
 const 캡처폴더 = process.argv[2] ?? null;
 
-const 형식 = { ".html": "text/html; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
-const 서버 = createServer(async (req, res) => {
-  const 길 = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([/\\])+/, "");
-  const 파일 = join(뿌리, 길 || "index.html");
-  if (!파일.startsWith(뿌리)) { res.writeHead(403).end(); return; }
-  try {
-    const 내용 = await readFile(파일);
-    res.writeHead(200, { "content-type": 형식[extname(파일)] ?? "application/octet-stream" }).end(내용);
-  } catch {
-    res.writeHead(404).end();
-  }
-});
-await new Promise((r) => 서버.listen(0, "127.0.0.1", r));
-const 주소 = `http://127.0.0.1:${서버.address().port}/?today=2026-10-09`;
+const 서버 = await 서버열기(0);
+const 주소 = `${서버.주소}?today=2026-10-09`;
 
 const 문제 = [];
 const 확인 = (조건, 말) => { if (!조건) 문제.push(말); };
@@ -133,7 +116,7 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
 }
 
 await browser.close();
-서버.close();
+서버.닫기();
 if (문제.length) {
   console.error(문제.map((x) => `- ${x}`).join("\n"));
   process.exit(1);
