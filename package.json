@@ -1,0 +1,11 @@
+{
+  "name": "gihanjigi-prototype",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "기한지기 시제품. 사기 피해 직후 할 일과 법정 기한을 안내한다. 의존성 없이 브라우저와 Node 에서 그대로 돈다.",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "python3 -m http.server 4310 --directory src"
+  }
+}
