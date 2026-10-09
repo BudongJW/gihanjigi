@@ -13,6 +13,8 @@
 ## 하지 않는 것
 
 - 배포, 유료 API 호출, 알림 발송, DNS, 외부 계정 변경은 건마다 의뢰인 승인을 받는다.
+- 배포는 Vercel 이고 `.github/workflows/deploy.yml` 을 손으로 돌릴 때만 한다(`docs/배포.md`). `vercel.json` 의
+  `git.deploymentEnabled: false` 를 풀어 푸시마다 배포되게 하지 않는다.
 - 사건 기록은 이용자 기기의 localStorage(`gihanjigi.v1`)에만 둔다. 서버로 보내거나 분석 도구를 붙이지 않는다.
   `src/index.html` 의 CSP(`connect-src 'none'`, `form-action 'none'`)를 풀지 않는다.
 - 실제 피해자의 대화, 거래내역, 계좌번호, 신분 정보를 커밋하지 않는다. 예시와 검사 자료는 지어낸 것만 쓴다.

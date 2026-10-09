@@ -22,6 +22,11 @@ Node 24.10.0 을 쓴다. 화면과 계산 엔진은 의존성이 없다.
 화면 점검은 `playwright-core` 와 `axe-core` 를 쓰고 브라우저는 따로 받지 않는다. 크로미움이나 크롬의 위치를
 `CHROMIUM` 환경 변수로 넘긴다. GitHub Actions 는 러너에 깔린 구글 크롬을 쓴다.
 
+## 배포
+
+Vercel 에 `src/` 를 그대로 올린다. GitHub Actions 의 `deploy` 워크플로를 `main` 에서 손으로 돌릴 때만 배포되고,
+건마다 의뢰인 승인을 받는다. 처음 한 번 할 일과 시크릿은 [`docs/배포.md`](docs/배포.md) 에 적었다.
+
 ## 구조
 
     src/engine/   계산 규칙. 브라우저와 Node 에서 그대로 돈다.
