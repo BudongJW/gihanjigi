@@ -6,6 +6,9 @@
 - 2026 신한 스퀘어브릿지 대학생 창업 공모전(HERO IR)에 낸다. 신청자는 최태양, 마감은 2026-11-02 23:59.
 - 살핀(Salpin) 저장소의 `prototypes/gihanjigi/` 에서 만들어 이 저장소로 옮겼다. 사업소개서와 발표 자료는 살핀
   저장소 `docs/strategy/` 에 있다.
+- 발표 자료의 휴대폰 화면(표지, 6~9장)은 이 시제품을 예시 사건으로 열어 찍는다. `src/ui/sample.mjs`, 화면, 글자를
+  바꾸면 살핀 저장소의 `docs/strategy/hero-ir/screens.mjs` 를 `GIHANJIGI_DIR=<이 저장소>` 로 다시 돌려야 한다고
+  보고에 적는다.
 
 ## 하지 않는 것
 
