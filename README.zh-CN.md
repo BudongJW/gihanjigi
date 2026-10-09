@@ -33,7 +33,7 @@ Gihanjigi 是一个网页原型，面向在韩国刚刚遭遇诈骗、蒙受资�
 ## 测试
 
     npm ci
-    npm test                  # 69 项引擎测试（node:test）
+    npm test                  # 71 项引擎测试（node:test）
     npm run check:browser     # 在 320px、390px 和 1280px 下检查流程并运行 axe
     npm run verify            # 两者都运行
 
