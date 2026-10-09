@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "기한지기 시제품. 사기 피해 직후 할 일과 법정 기한을 안내한다. 화면과 계산 엔진은 의존성 없이 브라우저와 Node 에서 그대로 돈다.",
+  "description": "Gihanjigi prototype: what to do right after a fraud loss in Korea, statutory deadlines and evidence lists. The app and rule engine run without dependencies in the browser and in Node.",
   "engines": {
     "node": ">=24.10.0 <25"
   },
