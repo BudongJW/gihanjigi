@@ -4,3 +4,8 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# 기기 안 글자 인식 일꾼(worker)은 페이지의 CSP 메타 태그를 따르지 않으므로 여기서 따로 막는다.
+# 같은 주소의 모델 파일만 받고(connect-src 'self'), WebAssembly 만 허용한다. 다른 주소로는 아무것도 보내지 못한다.
+/vendor/tesseract/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'

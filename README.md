@@ -17,7 +17,7 @@ Korean, and the procedures and deadlines follow Korean law.
 | Fraud type | A few questions (why the money was sent, how, whether the other party is a relative) sort the case into voice phishing, trade fraud, or a type not yet covered, with the articles behind the decision. Two sample cases can be loaded |
 | To do now | Steps for that type in the order they should happen right after the loss, each with its computed deadline where one applies |
 | Deadlines | Enter the dates from the notices received and the statutory deadlines are computed. Each one shows the calculation, notes and the cited article, and upcoming deadlines can be downloaded as a calendar file (.ics) |
-| Case record | Reads KakaoTalk chat exports (phone, PC and Mac formats) and bank transaction CSVs into a timeline. Text copied out of a screenshot with the phone's own text recognition (for example Live Text on iOS 16 or later) can be pasted with the screenshot's date and time; lines with an amount or an account are pulled out. Lines that show an amount or an account number are flagged for the user to confirm or correct. The whole case can be saved to and restored from a file |
+| Case record | Reads KakaoTalk chat exports (phone, PC and Mac formats) and bank transaction CSVs into a timeline. Screenshots are read on the device with Tesseract.js (Korean model), and lines with an amount or an account are pulled out. Text copied out of a screenshot with the phone's own text recognition (for example Live Text on iOS 16 or later) can be pasted with the screenshot's date and time; lines with an amount or an account are pulled out. Lines that show an amount or an account number are flagged for the user to confirm or correct. The whole case can be saved to and restored from a file |
 | Progress | Shows where the bank refund procedure and the criminal investigation stand, based on the dates entered |
 | Evidence list | Builds separate lists for the bank and for the police from confirmed records only, ready to print or copy |
 
@@ -29,7 +29,9 @@ Act, its last version before repeal.
 
 Case records stay in the browser's localStorage on the user's device. Nothing is sent to a server, and there are
 no analytics. The page's Content Security Policy (`connect-src 'none'`, `form-action 'none'`) makes the browser
-block any outbound request. All sample data is made up.
+block any outbound request. Screenshots are read on the device: the text-recognition worker gets its own Content Security
+Policy from `src/_headers` that only allows files from the same site, so images and recognised text never leave the device.
+All sample data is made up.
 
 ## Run
 
@@ -68,6 +70,7 @@ secrets are described in [`docs/배포.md`](docs/배포.md) (Korean).
       ics.mjs        Calendar files (.ics)
       case.mjs       Saving and loading a case
     src/ui/       Screens in plain JavaScript on top of the engine
+    src/vendor/   Tesseract.js and the Korean model for on-device text recognition (sources and licences inside)
     src/_headers  Security headers for Cloudflare Pages
     test/         Engine tests
     scripts/      Static server and browser check

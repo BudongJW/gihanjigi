@@ -1,5 +1,5 @@
 // 기한지기 시제품 화면. 엔진 모듈을 그대로 불러 쓰고, 사건은 이 기기의 localStorage 에만 둔다.
-// 서버로 보내는 것은 없다. 사진 속 글자 읽기(AI)는 연결하지 않았고, 휴대폰 글자 인식으로 복사한 글을 붙여 넣어 읽는다.
+// 서버로 보내는 것은 없다. 사진 속 글자는 이 기기 안에서 읽는다(ocr.mjs). 휴대폰 글자 인식으로 복사한 글을 붙여 넣어도 읽는다.
 import { h, 내려받기, 복사하기, 글로읽기 } from "./dom.mjs";
 import { 예시사건 } from "./sample.mjs";
 import { 질문 } from "../engine/classify.mjs";
@@ -396,14 +396,43 @@ function 읽은결과(이름, r, 확인) {
   return `${이름}: ${r.더함}건을 가져왔습니다.${확인 ? ` 금액이나 계좌가 보이는 ${확인}건은 확인 필요로 두었습니다.` : ""}${겹친}`;
 }
 
+/** 사진 파일의 마지막 수정 시각. 캡처 사진이면 대개 캡처한 시각이다. */
+function 파일일시(f) {
+  const d = new Date(f.lastModified);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** 사진 속 글을 이 기기 안에서 읽어 기록으로 넣는다. 읽은 글 전체 한 건과 금액이나 계좌가 보이는 줄을 확인 필요로 둔다. */
+async function 사진읽기(사진들, 결과들) {
+  안내 = `사진 ${사진들.length}장 속 글자를 이 기기 안에서 읽는 중입니다. 처음에는 글자 인식 파일(약 5MB)을 받아 시간이 조금 걸립니다.`;
+  그리기();
+  let 읽음;
+  try {
+    const { 사진글읽기 } = await import("./ocr.mjs");
+    읽음 = await 사진글읽기(사진들, (f, i) => { 안내 = `사진 속 글자를 읽는 중입니다(${i + 1}/${사진들.length}, ${f.name}).`; 그리기(); });
+  } catch {
+    결과들.push("이 브라우저에서는 사진 속 글자를 읽지 못했습니다. 휴대폰의 글자 인식으로 복사해 「대화나 사진 속 글 붙여 넣기」에 넣어 주십시오.");
+    return;
+  }
+  for (const { 파일, 글, 문제 } of 읽음) {
+    if (문제 || !글?.trim()) {
+      결과들.push(`${파일.name}: ${문제 ? "사진 속 글자를 읽지 못했습니다" : "사진에서 글자를 찾지 못했습니다"}. 휴대폰의 글자 인식으로 복사해 붙여 넣어도 됩니다.`);
+      continue;
+    }
+    const 기록 = 붙인글을기록으로(글, 파일일시(파일), `${파일.name} 글자 인식`);
+    const r = 기록더하기(기록);
+    결과들.push(`${파일.name}: 사진 속 글을 이 기기 안에서 읽어 ${r.더함}건을 넣었습니다(읽은 글 전체와, 금액이나 계좌가 보이는 ${기록.length - 1}줄). 글자 인식은 틀릴 수 있으니 사진과 맞춰 보고 확정해 주십시오.${r.겹친 ? ` 이미 있는 ${r.겹친}건은 뺐습니다.` : ""}`);
+  }
+}
+
 async function 파일가져오기(e) {
   const 결과들 = [];
+  const 사진들 = [];
   for (const f of [...e.target.files]) {
     if (f.type.startsWith("image/")) {
-      const d = new Date(f.lastModified);
-      const 일시 = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-      const r = 기록더하기([{ ...직접기록({ 일시, 종류: "사진", 내용: `${f.name}. 사진 속 내용은 고치기에서 직접 적습니다.` }), 출처: f.name, 상태: "확인 필요" }]);
-      결과들.push(`${f.name}: 사진은 파일 이름과 찍은 시각만 기록했습니다. 사진 속 글은 휴대폰의 글자 인식으로 복사해 「대화나 사진 속 글 붙여 넣기」에 넣으면 금액과 계좌를 찾습니다.${r.겹친 ? " 이미 있는 사진이라 뺐습니다." : ""}`);
+      const r = 기록더하기([{ ...직접기록({ 일시: 파일일시(f), 종류: "사진", 내용: `${f.name}. 사진 파일입니다. 사진 속 글은 이 기기 안에서 읽어 따로 넣습니다.` }), 출처: f.name, 상태: "확인 필요" }]);
+      if (r.겹친) 결과들.push(`${f.name}: 이미 있는 사진이라 뺐습니다.`);
+      else 사진들.push(f);
       continue;
     }
     const 글 = await 글로읽기(f);
@@ -419,6 +448,8 @@ async function 파일가져오기(e) {
       결과들.push(읽은결과(f.name, 기록더하기(기록), 기록.filter((r) => r.상태 === "확인 필요").length));
     }
   }
+  저장();
+  if (사진들.length) await 사진읽기(사진들, 결과들);
   안내 = 결과들.join(" ");
   저장();
   그리기();
@@ -566,7 +597,7 @@ function 기록화면() {
       h("div", { class: "field" },
         h("input", { type: "file", id: "file", class: "file-input", accept: ".txt,.csv,.tsv,image/*", multiple: true, onchange: 파일가져오기, "aria-describedby": "file-hint" }),
         h("label", { for: "file", class: "btn" }, "파일 고르기"),
-        h("p", { class: "hint", id: "file-hint" }, "카카오톡 대화 내보내기 파일(.txt)과 은행 거래내역(.csv)을 읽습니다. 사진은 파일 이름과 시각만 기록하고, 사진 속 글은 아래 붙여 넣기로 읽습니다. 파일은 이 기기 밖으로 나가지 않습니다.")),
+        h("p", { class: "hint", id: "file-hint" }, "카카오톡 대화 내보내기 파일(.txt), 은행 거래내역(.csv), 캡처 사진을 읽습니다. 사진 속 글은 이 기기 안에서 글자 인식으로 읽고, 처음 한 번 글자 인식 파일(약 5MB)을 받습니다. 파일은 이 기기 밖으로 나가지 않습니다.")),
       내이름칸(),
       h("details", { class: "more", open: Boolean(붙일글) },
         h("summary", null, "대화나 사진 속 글 붙여 넣기"),
