@@ -129,6 +129,18 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
   // Mac 카카오톡 CSV 는 확장자가 .csv 여도 대화로 읽는다
   await page.setInputFiles("#file", { name: "대화.csv", mimeType: "text/csv", buffer: Buffer.from(Mac대화) });
   await page.waitForFunction(() => document.querySelector(".notice")?.textContent.includes("대화.csv: 1건을 가져왔습니다"));
+  // 캡처 사진 속 글을 휴대폰 글자 인식으로 복사해 붙여 넣으면 금액과 계좌가 보이는 줄을 꺼낸다.
+  // 일시를 넣지 않고 읽으면 일시를 넣으라고 하고, 붙여 넣은 글은 지우지 않는다.
+  await page.click("summary:has-text('대화나 사진 속 글 붙여 넣기')");
+  await page.fill("#paste", "중고왕\n국민 123456-01-234567 홍길동\n오후 2:08\n350,000원 보냈습니다\n오후 2:10");
+  await page.click("#paste-read");
+  await page.waitForFunction(() => document.querySelector(".notice")?.textContent.includes("사진 속 날짜와 시각"));
+  확인((await page.inputValue("#paste")).includes("350,000원"), `${크기}: 읽지 못했을 때 붙여 넣은 글이 지워졌다`);
+  await page.fill("#paste-time", "2026-10-03T14:00");
+  await page.click("#paste-read");
+  await page.waitForFunction(() => document.querySelector(".notice")?.textContent.includes("붙여 넣은 글: 3건을 가져왔습니다"));
+  확인((await page.locator(".records > li").count()) === 7, `${크기}: 사진 글에서 꺼낸 기록이 3건이 아니다`);
+  확인((await page.textContent(".records")).includes("123456-01-234567"), `${크기}: 사진 글의 계좌가 기록에 없다`);
   await 점검(page, `${크기}-record`);
 
   // 사건 파일: 내려받고, 기록을 지운 뒤, 다시 불러온다
@@ -140,7 +152,7 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
   await 가기("record");
   await page.setInputFiles("#case-file", 백업경로);
   await page.waitForFunction(() => document.querySelector(".notice")?.textContent.includes("사건 파일을 불러왔습니다"));
-  확인((await page.locator(".records > li").count()) === 4, `${크기}: 사건 파일에서 기록이 되살아나지 않았다`);
+  확인((await page.locator(".records > li").count()) === 7, `${크기}: 사건 파일에서 기록이 되살아나지 않았다`);
   await page.setInputFiles("#case-file", { name: "x.json", mimeType: "application/json", buffer: Buffer.from("{}") });
   await page.waitForFunction(() => document.querySelector(".notice")?.textContent.includes("사건 파일이 아닙니다"));
 
@@ -165,7 +177,7 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
   await page.waitForSelector("#show-all");
   확인((await page.locator(".records > li").count()) === 150, `${크기}: 긴 기록을 150건으로 끊지 않았다`);
   await page.click("#show-all");
-  확인((await page.locator(".records > li").count()) === 204, `${크기}: 더 보기를 눌러도 기록이 다 나오지 않는다`);
+  확인((await page.locator(".records > li").count()) === 207, `${크기}: 더 보기를 눌러도 기록이 다 나오지 않는다`);
 
   // 예시 사건과 기록 지우기
   await 가기("type");

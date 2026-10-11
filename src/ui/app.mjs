@@ -1,5 +1,5 @@
 // 기한지기 시제품 화면. 엔진 모듈을 그대로 불러 쓰고, 사건은 이 기기의 localStorage 에만 둔다.
-// 서버로 보내는 것은 없다. 사진 속 글자 읽기(AI)는 연결하지 않았다.
+// 서버로 보내는 것은 없다. 사진 속 글자 읽기(AI)는 연결하지 않았고, 휴대폰 글자 인식으로 복사한 글을 붙여 넣어 읽는다.
 import { h, 내려받기, 복사하기, 글로읽기 } from "./dom.mjs";
 import { 예시사건 } from "./sample.mjs";
 import { 질문 } from "../engine/classify.mjs";
@@ -7,7 +7,7 @@ import { 날짜항목, 개편시행일, 통지서날짜묻는끝 } from "../engi
 import { 조문 } from "../engine/law.mjs";
 import { 새사건, 불러오기, 저장하기, 풀이, 저장열쇠, 사건파일, 사건파일읽기 } from "../engine/case.mjs";
 import { 일정파일 } from "../engine/ics.mjs";
-import { 카톡읽기, 거래내역읽기, 대화를기록으로, 거래를기록으로, 직접기록, 시간순, 증거목록, 글종류 } from "../engine/evidence.mjs";
+import { 카톡읽기, 거래내역읽기, 대화를기록으로, 거래를기록으로, 붙인글을기록으로, 직접기록, 시간순, 증거목록, 글종류 } from "../engine/evidence.mjs";
 import { isIso, 한글날짜 } from "../engine/dates.mjs";
 
 // ?today=2026-10-09 로 기준일을 고정할 수 있다. 화면 점검과 캡처에 쓴다.
@@ -22,6 +22,9 @@ let 사건 = 새사건(오늘);
 let 안내 = null;
 let 고치는기록 = null;
 let 확인만보기 = false;
+/** 붙여 넣기 칸의 글과 일시. 읽지 못해 다시 그릴 때 지우지 않으려고 둔다. 읽으면 비운다. */
+let 붙일글 = "";
+let 붙일일시 = "";
 /** 기록이 많으면 앞의 일부만 그린다. 대화 파일 하나에 수천 줄이 있을 수 있다. */
 const 한번에 = 150;
 let 보일개수 = 한번에;
@@ -400,7 +403,7 @@ async function 파일가져오기(e) {
       const d = new Date(f.lastModified);
       const 일시 = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
       const r = 기록더하기([{ ...직접기록({ 일시, 종류: "사진", 내용: `${f.name}. 사진 속 내용은 고치기에서 직접 적습니다.` }), 출처: f.name, 상태: "확인 필요" }]);
-      결과들.push(`${f.name}: 사진은 파일 이름과 찍은 시각만 기록했습니다. 사진 속 글자 읽기는 아직 연결하지 않았습니다.${r.겹친 ? " 이미 있는 사진이라 뺐습니다." : ""}`);
+      결과들.push(`${f.name}: 사진은 파일 이름과 찍은 시각만 기록했습니다. 사진 속 글은 휴대폰의 글자 인식으로 복사해 「대화나 사진 속 글 붙여 넣기」에 넣으면 금액과 계좌를 찾습니다.${r.겹친 ? " 이미 있는 사진이라 뺐습니다." : ""}`);
       continue;
     }
     const 글 = await 글로읽기(f);
@@ -422,16 +425,29 @@ async function 파일가져오기(e) {
 }
 
 function 붙여넣기읽기() {
-  const 칸 = document.getElementById("paste");
-  const 메시지 = 카톡읽기(칸.value);
-  if (!메시지.length) {
-    안내 = "대화 형식을 찾지 못했습니다. 「2026년 10월 3일 오후 2:05, 이름 : 내용」처럼 날짜와 이름이 붙은 줄을 붙여 넣어 주십시오.";
+  붙일글 = document.getElementById("paste")?.value ?? "";
+  붙일일시 = String(document.getElementById("paste-time")?.value ?? "").slice(0, 16);
+  const 메시지 = 카톡읽기(붙일글);
+  if (메시지.length) {
+    const 기록 = 대화를기록으로(메시지, "붙여 넣은 대화");
+    안내 = 읽은결과("붙여 넣은 대화", 기록더하기(기록), 기록.filter((r) => r.상태 === "확인 필요").length);
+    붙일글 = 붙일일시 = "";
+    저장();
     그리기();
     return;
   }
-  const 기록 = 대화를기록으로(메시지, "붙여 넣은 대화");
-  안내 = 읽은결과("붙여 넣은 대화", 기록더하기(기록), 기록.filter((r) => r.상태 === "확인 필요").length);
-  저장();
+  // 내보낸 대화 형식이 아니면 사진에서 복사한 글로 보고, 이용자가 넣은 사진 속 일시를 쓴다.
+  if (!붙일글.trim()) {
+    안내 = "붙여 넣은 글이 없습니다.";
+  } else if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(붙일일시)) {
+    안내 = "내보낸 대화 형식이 아닙니다. 사진에서 복사한 글이면 「사진 속 날짜와 시각」을 넣고 다시 읽어 주십시오.";
+  } else {
+    const 기록 = 붙인글을기록으로(붙일글, 붙일일시, "붙여 넣은 글");
+    const r = 기록더하기(기록);
+    안내 = `붙여 넣은 글: ${r.더함}건을 가져왔습니다. 글 전체를 한 건으로 두고, 금액이나 계좌가 보이는 ${기록.length - 1}줄을 따로 꺼냈습니다. 모두 확인 필요로 두었으니 사진과 맞는지 보고 확정해 주십시오.${r.겹친 ? ` 이미 있는 ${r.겹친}건은 뺐습니다.` : ""}`;
+    붙일글 = 붙일일시 = "";
+    저장();
+  }
   그리기();
 }
 
@@ -550,12 +566,14 @@ function 기록화면() {
       h("div", { class: "field" },
         h("input", { type: "file", id: "file", class: "file-input", accept: ".txt,.csv,.tsv,image/*", multiple: true, onchange: 파일가져오기, "aria-describedby": "file-hint" }),
         h("label", { for: "file", class: "btn" }, "파일 고르기"),
-        h("p", { class: "hint", id: "file-hint" }, "카카오톡 대화 내보내기 파일(.txt)과 은행 거래내역(.csv)을 읽습니다. 사진은 파일 이름과 시각만 기록합니다. 파일은 이 기기 밖으로 나가지 않습니다.")),
+        h("p", { class: "hint", id: "file-hint" }, "카카오톡 대화 내보내기 파일(.txt)과 은행 거래내역(.csv)을 읽습니다. 사진은 파일 이름과 시각만 기록하고, 사진 속 글은 아래 붙여 넣기로 읽습니다. 파일은 이 기기 밖으로 나가지 않습니다.")),
       내이름칸(),
-      h("details", { class: "more" },
-        h("summary", null, "대화 붙여 넣기"),
-        칸("paste", "대화 내용", h("textarea", { id: "paste", rows: 6, placeholder: "2026년 10월 3일 오후 2:05, 판매자 : 입금 확인 후 보내드려요" })),
-        h("div", { class: "actions" }, h("button", { type: "button", class: "btn", onclick: 붙여넣기읽기 }, "읽기"))),
+      h("details", { class: "more", open: Boolean(붙일글) },
+        h("summary", null, "대화나 사진 속 글 붙여 넣기"),
+        h("p", { class: "hint" }, "내보낸 대화를 붙여 넣거나, 캡처 사진 속 글을 휴대폰의 글자 인식(아이폰은 iOS 16 이상 사진 앱의 라이브 텍스트)으로 복사해 붙여 넣습니다. 금액과 계좌를 찾아 확인 필요로 넣고, 글은 이 기기 밖으로 나가지 않습니다."),
+        칸("paste", "붙여 넣을 글", h("textarea", { id: "paste", rows: 6, placeholder: "2026년 10월 3일 오후 2:05, 판매자 : 입금 확인 후 보내드려요", value: 붙일글 })),
+        칸("paste-time", "사진 속 날짜와 시각 (사진에서 복사한 글일 때)", h("input", { type: "datetime-local", id: "paste-time", max: `${오늘}T23:59`, value: 붙일일시 })),
+        h("div", { class: "actions" }, h("button", { type: "button", class: "btn", id: "paste-read", onclick: 붙여넣기읽기 }, "읽기"))),
       h("details", { class: "more" },
         h("summary", null, "직접 넣기"),
         h("form", { onsubmit: 직접넣기 },
