@@ -1,7 +1,7 @@
 // 기한 평가 사례. 날짜마다 손으로 센 값과 근거 조문을 맞춘다.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { 기한계산, 다음마감, 정렬 } from "../src/engine/deadlines.mjs";
+import { 기한계산, 다음마감, 정렬, 날짜항목 } from "../src/engine/deadlines.mjs";
 import { 유형확인 } from "../src/engine/classify.mjs";
 import { 조문 } from "../src/engine/law.mjs";
 
@@ -171,6 +171,6 @@ test("기한 문구에 엠대시와 가운뎃점이 없다", () => {
     ...계산(거래사기, { 불송치통지일: "2026-10-05", 불송치통지서일: "2026-09-30" }),
     ...계산(거래사기, { 불송치통지일: "2026-10-05", 불송치통지서일: "2026-10-06" }),
   ];
-  const 글 =목록.flatMap((k) => [k.이름, ...k.계산, ...k.메모]).join("\n");
+  const 글 = [...목록.flatMap((k) => [k.이름, ...k.계산, ...k.메모]), ...날짜항목.flatMap((x) => [x.이름, x.설명 ?? ""])].join("\n");
   assert.doesNotMatch(글, /[—·]/);
 });

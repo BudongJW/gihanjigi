@@ -90,6 +90,7 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
   await 가기("deadlines");
   await page.fill("#d-고소일", "2026-10-05");
   확인(await page.isVisible("#d-불송치통지일"), `${크기}: 고소일을 넣어도 불송치 칸이 나오지 않는다`);
+  확인((await page.textContent("#d-불송치통지일-hint")).includes("형사사법포털"), `${크기}: 받은 날 칸에 형사사법포털 안내가 없다`);
   확인(await page.evaluate(() => document.activeElement?.id === "d-고소일"), `${크기}: 날짜를 넣은 뒤 초점을 잃었다`);
   await page.fill("#d-불송치통지일", "2026-10-07");
   확인((await page.textContent(".results")).includes("2027.1.7(목)"), `${크기}: 불송치 이의신청 기한이 2027.1.7(목)이 아니다`);
