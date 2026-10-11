@@ -73,8 +73,8 @@ test("3영업일은 신청한 날을 빼고 주말과 공휴일을 건너뛴다"
   assert.equal(addBusinessDays("2026-04-29", 3).end, "2026-05-06"); // 노동절, 어린이날
 });
 
-test("추정 공휴일이 걸리거나 자료 범위를 벗어나면 밝힌다", () => {
-  assert.match(holidayDataNote("2026-12-20", "2027-03-29"), /설날/);
+test("자료 범위를 벗어나면 밝히고, 확인한 공휴일만 걸리면 아무것도 붙이지 않는다", () => {
+  assert.equal(holidayDataNote("2026-12-20", "2027-03-29"), null); // 2027년 설날은 월력요항으로 확인했다
   assert.equal(holidayDataNote("2026-10-07", "2027-01-14"), null);
   assert.match(holidayDataNote("2027-11-01", "2028-02-01"), /2026~2027년치/);
 });

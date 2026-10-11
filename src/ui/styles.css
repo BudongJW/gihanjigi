@@ -153,6 +153,7 @@ input[type="checkbox"] { accent-color: var(--ink); }
 .field.date input { grid-column: 1; }
 .field.date .link-btn { grid-column: 2; font-size: 15px; color: var(--ink-2); }
 .field.date .err { grid-column: 1 / -1; }
+.field.date .hint { grid-column: 1 / -1; margin: 0; }
 @media (min-width: 640px) {
   .field.date { grid-template-columns: minmax(0, 1fr) 200px 4em; }
   .field.date > label { grid-column: 1; }

@@ -90,10 +90,18 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
   await 가기("deadlines");
   await page.fill("#d-고소일", "2026-10-05");
   확인(await page.isVisible("#d-불송치통지일"), `${크기}: 고소일을 넣어도 불송치 칸이 나오지 않는다`);
+  확인((await page.textContent("#d-불송치통지일-hint")).includes("형사사법포털"), `${크기}: 받은 날 칸에 형사사법포털 안내가 없다`);
   확인(await page.evaluate(() => document.activeElement?.id === "d-고소일"), `${크기}: 날짜를 넣은 뒤 초점을 잃었다`);
   await page.fill("#d-불송치통지일", "2026-10-07");
   확인((await page.textContent(".results")).includes("2027.1.7(목)"), `${크기}: 불송치 이의신청 기한이 2027.1.7(목)이 아니다`);
   확인((await page.textContent("#due")).includes("2027.1.7(목)"), `${크기}: 다음 마감 줄에 기한이 없다`);
+  // 개편 직후에 받은 불송치 통지는 통지서에 적힌 날짜를 묻는다. 그 날짜가 개편 전이면 3개월 기한이 없다(부칙 제7조).
+  확인(await page.isVisible("#d-불송치통지서일"), `${크기}: 개편 직후에 받은 통지인데 통지서 날짜 칸이 나오지 않는다`);
+  await page.fill("#d-불송치통지서일", "2026-09-30");
+  확인((await page.textContent(".results")).includes("통지서에 적힌 날짜가 2026.10.2(금) 전이라서"), `${크기}: 통지서 날짜가 개편 전인데 기한 없음으로 나오지 않는다`);
+  확인(!(await page.textContent("#due")).includes("2027.1.7(목)"), `${크기}: 기한이 없는데 다음 마감 줄에 남아 있다`);
+  await page.fill("#d-불송치통지서일", "");
+  확인((await page.textContent("#due")).includes("2027.1.7(목)"), `${크기}: 통지서 날짜를 지웠는데 기한이 돌아오지 않는다`);
   await page.fill("#d-송금일", "2026-12-01");
   확인((await page.textContent("#d-송금일-err")).includes("오늘보다 뒤"), `${크기}: 미래 날짜를 막지 않는다`);
   const [달력] = await Promise.all([page.waitForEvent("download"), page.click("text=달력 파일 내려받기")]);

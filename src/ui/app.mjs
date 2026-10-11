@@ -3,7 +3,7 @@
 import { h, 내려받기, 복사하기, 글로읽기 } from "./dom.mjs";
 import { 예시사건 } from "./sample.mjs";
 import { 질문 } from "../engine/classify.mjs";
-import { 날짜항목 } from "../engine/deadlines.mjs";
+import { 날짜항목, 개편시행일, 통지서날짜묻는끝 } from "../engine/deadlines.mjs";
 import { 조문 } from "../engine/law.mjs";
 import { 새사건, 불러오기, 저장하기, 풀이, 저장열쇠, 사건파일, 사건파일읽기 } from "../engine/case.mjs";
 import { 일정파일 } from "../engine/ics.mjs";
@@ -223,7 +223,7 @@ function 할일화면(p) {
 
 const 묶음 = [
   { 이름: "은행", 칸: ["구술신청일", "서면제출일", "추가기한통지일", "공고일"] },
-  { 이름: "수사", 칸: ["고소일", "송치통지일", "불송치통지일", "이의신청일", "기소일", "불기소통지일", "항고기각통지일"] },
+  { 이름: "수사", 칸: ["고소일", "송치통지일", "불송치통지일", "불송치통지서일", "이의신청일", "기소일", "불기소통지일", "항고기각통지일"] },
   { 이름: "그 밖", 칸: ["송금일", "범인안날"] },
 ];
 
@@ -236,6 +236,8 @@ function 보이나(id, e, 유형) {
     case "서면제출일": case "추가기한통지일": return 유형.지급정지 && Boolean(e.구술신청일);
     case "송치통지일": return Boolean(e.고소일) && !e.불송치통지일;
     case "불송치통지일": return Boolean(e.고소일) && !e.송치통지일;
+    // 개편 직후에 받은 통지만 통지서 날짜로 부칙 제7조를 가른다.
+    case "불송치통지서일": return Boolean(e.불송치통지일) && e.불송치통지일 >= 개편시행일 && e.불송치통지일 <= 통지서날짜묻는끝;
     case "이의신청일": return Boolean(e.불송치통지일);
     case "기소일": return Boolean(e.송치통지일) && !e.불기소통지일;
     case "불기소통지일": return Boolean(e.송치통지일) && !e.기소일;
@@ -249,11 +251,13 @@ let 기한결과 = null;
 
 function 날짜칸(id) {
   const 칸id = `d-${id}`;
-  const 입력 = h("input", { type: "date", id: 칸id, min: "2020-01-01", max: 오늘, "aria-describedby": `${칸id}-err`, onchange: (e) => 날짜바꾸기(id, e.target.value, 입력) });
+  const 설명 = 날짜항목.find((x) => x.id === id)?.설명;
+  const 입력 = h("input", { type: "date", id: 칸id, min: "2020-01-01", max: 오늘, "aria-describedby": 설명 ? `${칸id}-hint ${칸id}-err` : `${칸id}-err`, onchange: (e) => 날짜바꾸기(id, e.target.value, 입력) });
   return h("div", { class: "field date", "data-id": id },
     h("label", { for: 칸id }, 항목이름(id)),
     입력,
     h("button", { type: "button", class: "link-btn", "aria-label": `${항목이름(id)} 지우기`, onclick: () => { 날짜바꾸기(id, "", 입력); 입력.focus(); } }, "지우기"),
+    설명 ? h("p", { class: "hint", id: `${칸id}-hint` }, 설명) : null,
     h("p", { class: "err", id: `${칸id}-err` }));
 }
 
