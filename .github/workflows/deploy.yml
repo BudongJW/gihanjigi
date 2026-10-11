@@ -29,13 +29,19 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       WRANGLER_SEND_METRICS: "false"
     steps:
+      # 값은 찍지 않는다. Account ID 는 wrangler 가 받는 글자(영문자, 숫자, -, _)만 들어 있어야 한다. 이메일이나 빈칸이
+      # 섞이면 검사를 다 돈 뒤에야 wrangler 가 멈추므로 여기서 먼저 멈춘다(2026-10-11 첫 실행이 그렇게 멈췄다).
       - name: 시크릿 확인
         run: |
           for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
             if [ -z "${!name}" ]; then echo "::error::시크릿 ${name} 이 없습니다. docs/배포.md 를 보세요."; exit 1; fi
           done
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+          if ! [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[A-Za-z0-9_-]+$ ]]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID 에 쓸 수 없는 글자(@, 빈칸, 줄바꿈 등)가 있습니다. 계정 이메일이 아니라 Workers & Pages 의 Account ID 를 넣습니다. docs/배포.md 를 보세요."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
