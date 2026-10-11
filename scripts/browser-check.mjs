@@ -179,6 +179,24 @@ for (const [크기, viewport] of [["m", { width: 390, height: 844 }], ["d", { wi
   await page.click("#show-all");
   확인((await page.locator(".records > li").count()) === 207, `${크기}: 더 보기를 눌러도 기록이 다 나오지 않는다`);
 
+  // 캡처 사진 속 글자는 이 기기 안에서 읽는다. 글자 인식 파일을 받는 데 시간이 걸려 휴대폰 폭에서 한 번만 본다.
+  // 일꾼(worker)도 같은 주소에서만 받는지는 위의 요청 감시가 함께 센다.
+  if (크기 === "m") {
+    const 그림맥 = await browser.newContext({ viewport: { width: 390, height: 260 }, deviceScaleFactor: 3 });
+    const 그림쪽 = await 그림맥.newPage();
+    await 그림쪽.setContent(`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#bacee0;font:15px sans-serif;padding:16px">
+      <div style="background:#fff;border-radius:12px;padding:8px 11px;width:fit-content">국민 123456-01-234567 홍길동</div>
+      <div style="background:#fee500;border-radius:12px;padding:8px 11px;width:fit-content;margin:12px 0 0 auto">350,000원 보냈습니다</div></body>`);
+    const 캡처 = await 그림쪽.screenshot();
+    await 그림맥.close();
+    const 앞 = await page.locator(".records > li").count();
+    await page.setInputFiles("#file", { name: "캡처.png", mimeType: "image/png", buffer: 캡처 });
+    await page.waitForFunction(() => /이 기기 안에서 읽어|읽지 못했습니다/.test(document.querySelector(".notice")?.textContent ?? ""), null, { timeout: 120000 });
+    확인((await page.textContent(".notice")).includes("이 기기 안에서 읽어"), `${크기}: 사진 속 글자를 읽지 못했다(${await page.textContent(".notice")})`);
+    확인((await page.textContent(".records")).includes("123456-01-234567"), `${크기}: 사진 속 계좌를 기록에 넣지 못했다`);
+    확인((await page.locator(".records > li").count()) >= 앞 + 3, `${크기}: 사진 기록, 읽은 글, 꺼낸 줄이 들어가지 않았다`);
+  }
+
   // 예시 사건과 기록 지우기
   await 가기("type");
   await page.click("text=대출 사기 예시");

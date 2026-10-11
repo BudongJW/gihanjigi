@@ -15,6 +15,9 @@
   프로젝트를 Git 저장소에 연결해 푸시마다 배포되게 하지 않는다. `functions/` 나 `_worker.js` 를 두지 않는다.
 - 사건 기록은 이용자 기기의 localStorage(`gihanjigi.v1`)에만 둔다. 서버로 보내거나 분석 도구를 붙이지 않는다.
   `src/index.html` 의 CSP(`connect-src 'none'`, `form-action 'none'`)를 풀지 않는다.
+- 사진 속 글자는 이 기기 안에서만 읽는다(`src/ui/ocr.mjs`, `src/vendor/tesseract`). 일꾼(worker)은 페이지의 CSP 메타 태그를
+  따르지 않으므로 `src/_headers` 가 그 폴더에 같은 주소만 허용하는 CSP 를 붙인다. 이 CSP 를 넓히거나, 사진과 읽은 글을 외부
+  AI 나 다른 주소로 보내지 않는다(의뢰인 결정, 2026-10-11).
 - 실제 피해자의 대화, 거래내역, 계좌번호, 신분 정보를 커밋하지 않는다. 예시와 검사 자료는 지어낸 것만 쓴다.
 - 비밀값과 토큰을 커밋하지 않는다.
 
