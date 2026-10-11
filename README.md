@@ -17,7 +17,7 @@ Korean, and the procedures and deadlines follow Korean law.
 | Fraud type | A few questions (why the money was sent, how, whether the other party is a relative) sort the case into voice phishing, trade fraud, or a type not yet covered, with the articles behind the decision. Two sample cases can be loaded |
 | To do now | Steps for that type in the order they should happen right after the loss, each with its computed deadline where one applies |
 | Deadlines | Enter the dates from the notices received and the statutory deadlines are computed. Each one shows the calculation, notes and the cited article, and upcoming deadlines can be downloaded as a calendar file (.ics) |
-| Case record | Reads KakaoTalk chat exports (phone, PC and Mac formats) and bank transaction CSVs into a timeline. Lines that show an amount or an account number are flagged for the user to confirm or correct. The whole case can be saved to and restored from a file |
+| Case record | Reads KakaoTalk chat exports (phone, PC and Mac formats) and bank transaction CSVs into a timeline. Text copied out of a screenshot with the phone's own text recognition (for example Live Text on iOS 16 or later) can be pasted with the screenshot's date and time; lines with an amount or an account are pulled out. Lines that show an amount or an account number are flagged for the user to confirm or correct. The whole case can be saved to and restored from a file |
 | Progress | Shows where the bank refund procedure and the criminal investigation stand, based on the dates entered |
 | Evidence list | Builds separate lists for the bank and for the police from confirmed records only, ready to print or copy |
 
@@ -41,7 +41,7 @@ Use Node 24.10.0. The app and the rule engine have no dependencies.
 ## Test
 
     npm ci
-    npm test                  # 78 engine tests (node:test)
+    npm test                  # 80 engine tests (node:test)
     npm run check:browser     # flow checks and axe at 320px, 390px and 1280px
     npm run verify            # both
 
